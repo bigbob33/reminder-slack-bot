@@ -13,16 +13,18 @@ class MyController < SlackRubyBot::MVC::Controller::Base
 
   def remind
     message = data["text"]
-    user = user_name(message)
-    activity = activity_name(message)
-    set_reminder(user, activity)
+    set_reminder(
+      users(message),
+      activity_name(message)
+    )
     client.say(channel: data.channel, text: "Reminder sent")
   end
 
   private
 
-  def user_name(message)
-    message.match(USER_REGEXP).captures[0]
+  def users(message)
+    raw_users = message.match(USER_REGEXP).captures[0]
+    raw_users.split(/,\s*/)
   end
 
   def activity_name(message)
