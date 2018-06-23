@@ -39,17 +39,17 @@ class MyController < SlackRubyBot::MVC::Controller::Base
     @bunny_conn ||= Bunny.new
   end
 
-  def set_reminder(user, activity)
+  def set_reminder(users, activity)
     bunny_conn.start
     ch = bunny_conn.create_channel
     q  = ch.queue("slackbot.raw_messages")
     x  = ch.default_exchange
 
-    x.publish(json_msg(user, activity), :routing_key => q.name)
+    x.publish(json_msg(users, activity), :routing_key => q.name)
   end
 
-  def json_msg(user, activity)
-    { message: activity, user: user }.to_json
+  def json_msg(users, activity)
+    { message: activity, users: users }.to_json
   end
 end
 
