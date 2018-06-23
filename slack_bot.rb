@@ -8,28 +8,42 @@ class MyView < SlackRubyBot::MVC::View::Base; end
 class MyModel < SlackRubyBot::MVC::Model::Base; end
 
 class MyController < SlackRubyBot::MVC::Controller::Base
-  def ping
-    client.say(channel: data.channel, text: "Wait for it...")
-    set_reminder('pong')
+  USER_REGEXP = /remind (.*) that/
+  ACTIVITY_REGEXP = /that (.*)/
+
+  def remind
+    message = data["text"]
+    user = user_name(message)
+    activity = activity_name(message)
+    set_reminder(user, activity)
+    client.say(channel: data.channel, text: "Reminder sent")
   end
 
   private
+
+  def user_name(message)
+    message.match(USER_REGEXP).captures[0]
+  end
+
+  def activity_name(message)
+    message.match(ACTIVITY_REGEXP).captures[0]
+  end
 
   def bunny_conn
     @bunny_conn ||= Bunny.new
   end
 
-  def set_reminder(message)
+  def set_reminder(user, activity)
     bunny_conn.start
     ch = bunny_conn.create_channel
-    q  = ch.queue("slackbot.raw_messages", :auto_delete => true)
+    q  = ch.queue("slackbot.raw_messages")
     x  = ch.default_exchange
 
-    x.publish(json_msg(message), :routing_key => q.name)
+    x.publish(json_msg(user, activity), :routing_key => q.name)
   end
 
-  def json_msg(msg)
-    { message: msg }.to_json
+  def json_msg(user, activity)
+    { message: activity, user: user }.to_json
   end
 end
 
