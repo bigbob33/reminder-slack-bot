@@ -8,8 +8,9 @@ class MyView < SlackRubyBot::MVC::View::Base; end
 class MyModel < SlackRubyBot::MVC::Model::Base; end
 
 class MyController < SlackRubyBot::MVC::Controller::Base
-  USER_REGEXP = /remind (.*) that/
+  USERS_REGEXP = /remind (.*) that/
   ACTIVITY_REGEXP = /that (.*)/
+  USER_ID = /<@(.*)>/
 
   def remind
     message = data["text"]
@@ -23,8 +24,11 @@ class MyController < SlackRubyBot::MVC::Controller::Base
   private
 
   def users(message)
-    raw_users = message.match(USER_REGEXP).captures[0]
-    raw_users.split(/,\s*/)
+    raw_users = message.match(USERS_REGEXP)
+    return [] if raw_users.nil?
+    raw_users = raw_users.captures[0]
+    raw_users = raw_users.split(/,\s*/)
+    raw_users.map { |user| user.match(USER_ID).captures[0] }
   end
 
   def activity(message)
