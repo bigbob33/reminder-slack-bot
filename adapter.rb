@@ -1,31 +1,40 @@
 require 'slack-ruby-client'
 require 'bunny'
-require 'picky'
 
 Slack.configure do |config|
   config.token = ENV['SLACK_API_TOKEN']
 end
 
-client = Slack::Web::Client.new
-client.auth_test
+class Adapter
+  def initialize
+    @bunny_con = Bunny.new
+    @bunny_con.start
 
-connection = Bunny.new
-connection.start
+    @slack_client = Slack::Web::Client.new
+    @slack_client.auth_test
 
-channel = connection.create_channel
-queue   = channel.queue('slackbot.processed_messages')
-
-logger = Logger.new(STDOUT)
-
-begin
-  puts ' [*] Waiting for messages. To exit press CTRL+C'
-  queue.subscribe(block: true) do |_delivery_info, _properties, body|
-    logger.info "Incoming message: #{body}"
-    parsed_body = JSON.parse(body)
-    user = client.users_search(user: parsed_body['user']).members.first
-    client.chat_postMessage(channel: user.id, text: parsed_body['message'], as_user: true)
+    @channel = @bunny_con.create_channel
+    @input   = @channel.queue('slackbot.processed_messages')
+    @logger  = Logger.new(STDOUT)
   end
-rescue Interrupt => _
-  connection.close
-  exit(0)
+
+  def run
+    @input.subscribe(block: true) do |_delivery_info, _properties, body|
+      @logger.info "Incoming message: #{body}"
+      parsed_body = JSON.parse(body)
+      @slack_client.chat_postMessage(channel: parsed_body['channel'], text: parsed_body['message'], as_user: true)
+    end
+  rescue Interrupt => _
+    @bunny_con.close
+    exit(0)
+  end
+
+  class << self
+    def run
+      new.run
+    end
+  end
 end
+
+puts ' [*] Waiting for messages. To exit press CTRL+C'
+Adapter.run

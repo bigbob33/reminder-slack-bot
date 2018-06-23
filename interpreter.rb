@@ -15,8 +15,10 @@ class Interpreter
     @input.subscribe(block: true) do |_delivery_info, _properties, body|
       @logger.info "Incoming message: #{body}"
       parsed_body = JSON.parse(body)
-      # interpreting...
-      publish(parsed_body.to_json, queue: 'slackbot.processed_messages')
+
+      reminders(parsed_body['users'], parsed_body['message']).each do |message|
+        publish(message, queue: 'slackbot.processed_messages')
+      end
     end
   rescue Interrupt => _
     @bunny_con.close
@@ -34,6 +36,15 @@ class Interpreter
   def publish(message, queue:)
     @channel.default_exchange.publish(message, routing_key: queue)
     @logger.info "Outgoing message: #{message}"
+  end
+
+  def reminders(users, message)
+    return [json_msg('#general', message)] if users.empty?
+    users.map { |user| json_msg(user, message) }
+  end
+
+  def json_msg(channel, message)
+    { channel: channel, message: message }.to_json
   end
 end
 
