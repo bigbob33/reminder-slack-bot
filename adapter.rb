@@ -13,7 +13,7 @@ connection = Bunny.new
 connection.start
 
 channel = connection.create_channel
-queue   = channel.queue('slackbot.raw_messages')
+queue   = channel.queue('slackbot.processed_messages')
 
 logger = Logger.new(STDOUT)
 

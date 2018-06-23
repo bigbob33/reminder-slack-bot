@@ -7,7 +7,7 @@ class Interpreter
     @bunny_con.start
 
     @channel = @bunny_con.create_channel
-    @input   = @channel.queue('messages.input')
+    @input   = @channel.queue('slackbot.raw_messages')
     @logger  = Logger.new(STDOUT)
   end
 
@@ -16,7 +16,7 @@ class Interpreter
       @logger.info "Incoming message: #{body}"
       parsed_body = JSON.parse(body)
       # interpreting...
-      publish(parsed_body.to_json, queue: 'messages.output')
+      publish(parsed_body.to_json, queue: 'slackbot.processed_messages')
     end
   rescue Interrupt => _
     @bunny_con.close
