@@ -6,6 +6,9 @@ GEM
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
+    amq-protocol (2.3.0)
+    bunny (2.11.0)
+      amq-protocol (~> 2.3.0)
     celluloid (0.17.3)
       celluloid-essentials
       celluloid-extras
@@ -63,8 +66,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  bunny
   celluloid-io
   slack-ruby-bot
 
 BUNDLED WITH
-   1.13.6
+   1.16.1
